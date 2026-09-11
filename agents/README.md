@@ -103,11 +103,12 @@ nomget bepinex install [--target <path>]
 
 #### `mod`
 ```sh
-# Install a mod, resolving and installing all upstream dependencies first
-nomget mod install <mod_id> [--version <version>] [--target <path>] [--ignore-hash]
+# Install mods, resolving and installing all upstream dependencies first
+# (IDs may be space- or comma-separated)
+nomget mod install <mod_id> [<mod_id> ...] [--version <version>] [--target <path>] [--ignore-hash]
 
-# Update an installed mod to the latest release
-nomget mod update <mod_id> [--target <path>]
+# Update installed mods to the latest release
+nomget mod update <mod_id> [<mod_id> ...] [--target <path>]
 
 # List all currently installed mods and versions in the target directory
 nomget mod list-installed [--target <path>]

@@ -115,8 +115,9 @@ nomget mod install NOBlackBox --target ~/NuclearOptionServer
 # List all installed mods and their version records
 nomget mod list-installed --target ~/NuclearOptionServer
 
-# Update a specific mod to the latest version in the manifest
-nomget mod update NOBlackBox --target ~/NuclearOptionServer
+# Update installed mods to the latest version in the manifest
+# (IDs may be space- or comma-separated)
+nomget mod update NOBlackBox NOHitreg --target ~/NuclearOptionServer
 ```
 
 ---

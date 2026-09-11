@@ -1,10 +1,11 @@
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::{Args, Parser, Subcommand};
 use nomget::bepinex::install_bepinex;
 use nomget::installer::ModInstaller;
 use nomget::logger::init_logger;
 use nomget::manifest::Manifest;
 use nomget::target::TargetInstallation;
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -99,13 +100,13 @@ enum BepinexCommands {
 
 #[derive(Subcommand)]
 enum ModCommands {
-    #[command(about = "Download and install a mod and resolve all dependencies")]
+    #[command(about = "Download and install mods and resolve all dependencies")]
     Install(ModInstallArgs),
 
-    #[command(about = "Update an installed mod to the latest version")]
+    #[command(about = "Update installed mods to the latest version")]
     Update {
-        #[arg(help = "Mod ID to update")]
-        mod_id: String,
+        #[arg(help = "Mod IDs to update (space or comma separated)")]
+        mod_ids: Vec<String>,
     },
 
     #[command(about = "List installed mods in the target installation")]
@@ -114,14 +115,32 @@ enum ModCommands {
 
 #[derive(Args)]
 struct ModInstallArgs {
-    #[arg(help = "Mod ID to install")]
-    mod_id: String,
+    #[arg(help = "Mod IDs to install (space or comma separated)")]
+    mod_ids: Vec<String>,
 
-    #[arg(short, long, help = "Specific version to install (defaults to latest release)")]
+    #[arg(long, help = "Specific version to install (defaults to latest release)")]
     version: Option<String>,
 
     #[arg(long, help = "Ignore SHA256 checksum mismatch")]
     ignore_hash: bool,
+}
+
+/// Expand user-supplied mod ID arguments into a deduplicated list.
+///
+/// Clap splits space-separated positional args itself; each element may also
+/// carry comma-separated IDs (`A,B`). Elements are not split on whitespace so
+/// quoted display names containing spaces are preserved for lookup.
+fn parse_mod_ids(raw: &[String]) -> Vec<String> {
+    let mut seen = HashSet::new();
+    let mut ids = Vec::new();
+    for entry in raw {
+        for id in entry.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            if seen.insert(id.to_string()) {
+                ids.push(id.to_string());
+            }
+        }
+    }
+    ids
 }
 
 fn resolve_target(cli_target: Option<&PathBuf>) -> Result<TargetInstallation> {
@@ -260,27 +279,58 @@ fn main() -> Result<()> {
                 let installer = ModInstaller::new(&target, &manifest)
                     .with_ignore_hash(args.ignore_hash);
 
-                println!("Resolving dependencies and installing '{}'...", args.mod_id);
-                let installed = installer.install(&args.mod_id, args.version.as_deref())?;
+                let mod_ids = parse_mod_ids(&args.mod_ids);
+                if mod_ids.is_empty() {
+                    bail!("No valid mod IDs provided");
+                }
+
+                let mut installed = Vec::new();
+                let mut already_up_to_date = 0usize;
+
+                for mod_id in &mod_ids {
+                    log::info!("Resolving dependencies and installing '{}'...", mod_id);
+                    let result = installer
+                        .install(mod_id, args.version.as_deref())
+                        .with_context(|| format!("Failed to install mod '{}'", mod_id))?;
+
+                    if result.is_empty() {
+                        already_up_to_date += 1;
+                    } else {
+                        installed.extend(result);
+                    }
+                }
 
                 if installed.is_empty() {
-                    println!("Mod '{}' is already up to date.", args.mod_id);
+                    println!("All requested mods are already up to date.");
                 } else {
                     println!("\nSuccessfully installed:");
                     for item in installed {
                         println!("  - {}", item);
                     }
                 }
+                if already_up_to_date > 0 {
+                    println!("{} mod(s) were already installed at the requested version.", already_up_to_date);
+                }
             }
-            ModCommands::Update { mod_id } => {
+            ModCommands::Update { mod_ids } => {
                 let target = resolve_target(cli.target.as_ref())?;
                 let manifest = Manifest::fetch(manifest_source)?;
                 let installer = ModInstaller::new(&target, &manifest);
 
-                if installer.update(&mod_id)? {
-                    println!("Mod '{}' updated successfully!", mod_id);
-                } else {
-                    println!("Mod '{}' is already up to date.", mod_id);
+                let mod_ids = parse_mod_ids(&mod_ids);
+                if mod_ids.is_empty() {
+                    bail!("No valid mod IDs provided");
+                }
+
+                for mod_id in &mod_ids {
+                    let updated = installer
+                        .update(mod_id)
+                        .with_context(|| format!("Failed to update mod '{}'", mod_id))?;
+                    if updated {
+                        println!("Mod '{}' updated successfully!", mod_id);
+                    } else {
+                        println!("Mod '{}' is already up to date.", mod_id);
+                    }
                 }
             }
             ModCommands::ListInstalled => {

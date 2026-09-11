@@ -59,14 +59,15 @@ nomget target info --target /path/to/NuclearOptionServer
 # Install BepInEx 5 to the target
 nomget bepinex install --target /path/to/NuclearOptionServer
 
-# Install a mod and all its dependencies
-nomget mod install NOBlackBox --target /path/to/NuclearOptionServer
+# Install mods and all their dependencies (space- or comma-separated)
+nomget mod install NOBlackBox NOHitreg --target /path/to/NuclearOptionServer
+nomget mod install "NOBlackBox, NOHitreg" --target /path/to/NuclearOptionServer
 
 # List installed mods in the target
 nomget mod list-installed --target /path/to/NuclearOptionServer
 
-# Update an installed mod to the latest version
-nomget mod update NOBlackBox --target /path/to/NuclearOptionServer
+# Update installed mods to the latest version
+nomget mod update NOBlackBox NOHitreg --target /path/to/NuclearOptionServer
 
 # Launch the game or dedicated server with BepInEx
 nomget target launch --target /path/to/NuclearOptionServer -- -batchmode -nographics
