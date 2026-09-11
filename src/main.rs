@@ -3,7 +3,7 @@ use clap::{Args, Parser, Subcommand};
 use nomget::bepinex::install_bepinex;
 use nomget::installer::ModInstaller;
 use nomget::logger::init_logger;
-use nomget::manifest::ManifestClient;
+use nomget::manifest::Manifest;
 use nomget::target::TargetInstallation;
 use std::path::PathBuf;
 
@@ -139,12 +139,12 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     init_logger(cli.verbose, cli.quiet);
 
-    let manifest_client = ManifestClient::new(cli.manifest.as_deref());
+    let manifest_source = cli.manifest.as_deref();
 
     match cli.command {
         Commands::Manifest { sub } => match sub {
             ManifestCommands::List { server_only } => {
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let mut mods = manifest.list_all();
                 if server_only {
                     mods.retain(|m| {
@@ -161,7 +161,7 @@ fn main() -> Result<()> {
                 }
             }
             ManifestCommands::Search { query } => {
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let results = manifest.search(&query);
                 println!("Search results for '{}' ({} found):\n", query, results.len());
                 for m in results {
@@ -175,7 +175,7 @@ fn main() -> Result<()> {
                 }
             }
             ManifestCommands::Info { mod_id } => {
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let m = manifest
                     .get_mod(&mod_id)
                     .ok_or_else(|| anyhow::anyhow!("Mod '{}' not found in manifest", mod_id))?;
@@ -256,7 +256,7 @@ fn main() -> Result<()> {
         Commands::Mod { sub } => match sub {
             ModCommands::Install(args) => {
                 let target = resolve_target(cli.target.as_ref())?;
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let installer = ModInstaller::new(&target, &manifest)
                     .with_ignore_hash(args.ignore_hash);
 
@@ -274,7 +274,7 @@ fn main() -> Result<()> {
             }
             ModCommands::Update { mod_id } => {
                 let target = resolve_target(cli.target.as_ref())?;
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let installer = ModInstaller::new(&target, &manifest);
 
                 if installer.update(&mod_id)? {
@@ -285,7 +285,7 @@ fn main() -> Result<()> {
             }
             ModCommands::ListInstalled => {
                 let target = resolve_target(cli.target.as_ref())?;
-                let manifest = manifest_client.fetch()?;
+                let manifest = Manifest::fetch(manifest_source)?;
                 let installer = ModInstaller::new(&target, &manifest);
 
                 let installed = installer.list_installed()?;

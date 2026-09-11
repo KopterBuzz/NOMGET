@@ -14,16 +14,8 @@ pub struct ResolutionPlan {
     pub items: Vec<ResolvedItem>,
 }
 
-pub struct DependencyResolver<'a> {
-    manifest: &'a Manifest,
-}
-
-impl<'a> DependencyResolver<'a> {
-    pub fn new(manifest: &'a Manifest) -> Self {
-        Self { manifest }
-    }
-
-    pub fn resolve(
+impl Manifest {
+    pub fn resolve_dependencies(
         &self,
         root_mod_id: &str,
         requested_version: Option<&str>,
@@ -75,13 +67,11 @@ impl<'a> DependencyResolver<'a> {
         }
 
         let mod_info = self
-            .manifest
             .get_mod(mod_id)
             .ok_or_else(|| anyhow::anyhow!("Mod '{}' not found in manifest", mod_id))?
             .clone();
 
         let artifact = self
-            .manifest
             .get_artifact(mod_id, requested_version)
             .ok_or_else(|| {
                 anyhow::anyhow!(

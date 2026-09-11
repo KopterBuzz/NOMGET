@@ -1,5 +1,4 @@
 use crate::manifest::{Artifact, Manifest};
-use crate::resolver::DependencyResolver;
 use crate::target::TargetInstallation;
 use anyhow::{bail, Context, Result};
 use sha2::{Digest, Sha256};
@@ -41,8 +40,7 @@ impl<'a> ModInstaller<'a> {
             );
         }
 
-        let resolver = DependencyResolver::new(self.manifest);
-        let plan = resolver.resolve(mod_id, requested_version)?;
+        let plan = self.manifest.resolve_dependencies(mod_id, requested_version)?;
 
         log::info!(
             "Resolved dependency chain with {} item(s): {}",
@@ -113,16 +111,30 @@ impl<'a> ModInstaller<'a> {
         }
 
         let mut list = Vec::new();
-        for entry in walkdir::WalkDir::new(&plugins)
-            .min_depth(1)
-            .max_depth(3)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_name() == "meta.json" {
-                if let Ok(content) = fs::read_to_string(entry.path()) {
+        let mut check_dir = |dir: &Path| {
+            let meta_path = dir.join("meta.json");
+            if meta_path.is_file() {
+                if let Ok(content) = fs::read_to_string(&meta_path) {
                     if let Ok(meta) = serde_json::from_str::<ModMeta>(&content) {
                         list.push(meta);
+                    }
+                }
+            }
+        };
+
+        if let Ok(entries) = fs::read_dir(&plugins) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let p = entry.path();
+                if p.is_dir() {
+                    check_dir(&p);
+                    let addons_dir = p.join("addons");
+                    if let Ok(addon_entries) = fs::read_dir(&addons_dir) {
+                        for a_entry in addon_entries.filter_map(|e| e.ok()) {
+                            let ap = a_entry.path();
+                            if ap.is_dir() {
+                                check_dir(&ap);
+                            }
+                        }
                     }
                 }
             }
@@ -221,7 +233,6 @@ impl<'a> ModInstaller<'a> {
         // Check if file is a zip archive
         let cursor = std::io::Cursor::new(&bytes);
         if let Ok(mut archive) = zip::ZipArchive::new(cursor) {
-            // Check if the zip already contains a top-level BepInEx/plugins or plugins/ folder
             let has_bepinex_root = (0..archive.len()).any(|i| {
                 if let Ok(file) = archive.by_index(i) {
                     let name = file.name().replace('\\', "/");
@@ -231,31 +242,14 @@ impl<'a> ModInstaller<'a> {
                 }
             });
 
-            if has_bepinex_root {
+            let dest = if has_bepinex_root {
                 log::info!("Archive contains root BepInEx folder, extracting to game root");
-                crate::bepinex::extract_zip_to_directory(&bytes, &self.target.root_path)?;
+                &self.target.root_path
             } else {
-                for i in 0..archive.len() {
-                    let mut file = archive.by_index(i)?;
-                    let enclosed_name = match file.enclosed_name() {
-                        Some(p) => p.to_owned(),
-                        None => continue,
-                    };
-
-                    let out_path = mod_dir.join(&enclosed_name);
-                    if file.is_dir() {
-                        fs::create_dir_all(&out_path)?;
-                    } else {
-                        if let Some(parent) = out_path.parent() {
-                            fs::create_dir_all(parent)?;
-                        }
-                        let mut out = File::create(&out_path)?;
-                        std::io::copy(&mut file, &mut out)?;
-                    }
-                }
-            }
+                mod_dir
+            };
+            crate::bepinex::extract_zip_to_directory(&bytes, dest)?;
         } else {
-            // Direct binary or file download
             let dest_file = mod_dir.join(&artifact.file_name);
             let mut out = File::create(&dest_file)?;
             out.write_all(&bytes)?;

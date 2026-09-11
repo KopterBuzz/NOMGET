@@ -103,34 +103,25 @@ pub struct Incompatibility {
     pub version: Option<String>,
 }
 
-pub struct ManifestClient {
-    source: String,
-}
-
-impl ManifestClient {
-    pub fn new(source: Option<&str>) -> Self {
-        Self {
-            source: source.unwrap_or(DEFAULT_MANIFEST_URL).to_string(),
-        }
-    }
-
-    pub fn fetch(&self) -> Result<Manifest> {
-        if self.source.starts_with("http://") || self.source.starts_with("https://") {
-            log::info!("Fetching manifest from URL: {}", self.source);
+impl Manifest {
+    pub fn fetch(source: Option<&str>) -> Result<Self> {
+        let src = source.unwrap_or(DEFAULT_MANIFEST_URL);
+        if src.starts_with("http://") || src.starts_with("https://") {
+            log::info!("Fetching manifest from URL: {}", src);
             let client = reqwest::blocking::Client::builder()
                 .user_agent("NOMGET/0.1.0")
                 .build()?;
 
             let response = client
-                .get(&self.source)
+                .get(src)
                 .send()
-                .with_context(|| format!("Failed to fetch manifest from {}", self.source))?;
+                .with_context(|| format!("Failed to fetch manifest from {}", src))?;
 
             if !response.status().is_success() {
                 anyhow::bail!(
                     "Failed to fetch manifest: HTTP {} from {}",
                     response.status(),
-                    self.source
+                    src
                 );
             }
 
@@ -143,7 +134,7 @@ impl ManifestClient {
             };
             Ok(Manifest { mods })
         } else {
-            let path = Path::new(&self.source);
+            let path = Path::new(src);
             log::info!("Reading manifest from local file: {}", path.display());
             let text = fs::read_to_string(path)
                 .with_context(|| format!("Failed to read local manifest: {}", path.display()))?;
@@ -156,9 +147,6 @@ impl ManifestClient {
             Ok(Manifest { mods })
         }
     }
-}
-
-impl Manifest {
     pub fn list_all(&self) -> Vec<&Mod> {
         let mut list: Vec<&Mod> = self.mods.values().collect();
         list.sort_by(|a, b| a.display_name.to_lowercase().cmp(&b.display_name.to_lowercase()));

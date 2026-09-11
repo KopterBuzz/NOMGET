@@ -219,13 +219,16 @@ pub fn find_library_folders(steam_path: &Path) -> Vec<PathBuf> {
 
     for vdf_path in vdf_paths {
         if let Ok(content) = fs::read_to_string(&vdf_path) {
-            let re = regex::Regex::new(r#""path"\s+"([^"]+)""#).unwrap();
-            for cap in re.captures_iter(&content) {
-                if let Some(m) = cap.get(1) {
-                    let folder_str = m.as_str().replace(r#"\\"#, "/");
-                    let p = PathBuf::from(folder_str);
-                    if p.is_dir() && !folders.contains(&p) {
-                        folders.push(p);
+            for line in content.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("\"path\"") {
+                    let parts: Vec<&str> = trimmed.split('"').collect();
+                    if parts.len() >= 4 {
+                        let folder_str = parts[3].replace(r#"\\"#, "/");
+                        let p = PathBuf::from(folder_str);
+                        if p.is_dir() && !folders.contains(&p) {
+                            folders.push(p);
+                        }
                     }
                 }
             }

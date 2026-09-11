@@ -8,6 +8,6 @@ pub mod target;
 pub use bepinex::install_bepinex;
 pub use installer::{ModInstaller, ModMeta};
 pub use logger::init_logger;
-pub use manifest::{Artifact, Manifest, ManifestClient, Mod};
-pub use resolver::{DependencyResolver, ResolutionPlan, ResolvedItem};
+pub use manifest::{Artifact, Manifest, Mod};
+pub use resolver::{ResolutionPlan, ResolvedItem};
 pub use target::{find_steam_path, TargetInstallation, TargetKind};
