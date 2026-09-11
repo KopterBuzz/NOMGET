@@ -47,7 +47,7 @@ NOMGET/
 
 | Feature | Description | Modules |
 | :--- | :--- | :--- |
-| **Manifest Querying** | Query the live NOMNOM manifest over HTTPS or local files; search by keyword, tag, or author; inspect mod metadata and artifact release trees. | `manifest.rs` |
+| **Manifest Querying** | Query the NOMNOM manifest over HTTPS or local files; search by keyword, tag, or author; inspect mod metadata and artifact release trees. Cached locally (with `version.json` freshness check) under `%USERPROFILE%\.nomget` (Windows) or `~/.nomget` (Linux). | `manifest.rs` |
 | **Steam Discovery** | Read Steam configurations (`libraryfolders.vdf`) via Windows Registry or Linux standard XDG/Flatpak/Snap paths to automatically locate game/server installations. | `target.rs` |
 | **Target Management** | Validate and inspect arbitrary installation directories; distinguish between dedicated servers and client games across PE (.exe) and ELF (.x86_64) binaries. | `target.rs` |
 | **BepInEx 5 Deployment** | Download, extract, and configure BepInEx 5 for Windows (x64) and Linux native (x64). Automatically patch `run_bepinex.sh` and generate `BepInEx.cfg`. | `bepinex.rs` |

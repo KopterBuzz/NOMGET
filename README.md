@@ -8,6 +8,9 @@ A powerful terminal application and library written in Rust for managing Nuclear
   - List all catalogued mods with client/server compatibility tags.
   - Case-insensitive search across mod IDs, display names, descriptions, authors, and tags.
   - Detailed mod view showing versions, release categories, dependencies, parent extensions, and SHA256 hashes.
+- **Local Manifest Caching**:
+  - Caches the manifest and its `version.json` marker under `%USERPROFILE%\.nomget` on Windows and `~/.nomget` on Linux.
+  - Runs offline-friendly: the manifest is only redownloaded when the remote version marker is newer than the cached copy.
 - **Steam & Target Discovery**:
   - Automatically detect Nuclear Option or Nuclear Option Dedicated Server from local Steam installations on Windows and Linux.
   - Target arbitrary game or dedicated server installations via `--target <PATH>`.
