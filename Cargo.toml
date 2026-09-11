@@ -1,6 +1,6 @@
 [package]
 name = "nomget"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["KopterBuzz", "Gabor Nemeth"]
 description = "Terminal application and API to query NOMNOM manifests, manage BepInEx 5, and install Nuclear Option mods."

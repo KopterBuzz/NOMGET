@@ -12,7 +12,7 @@ use std::path::PathBuf;
 #[command(
     name = "nomget",
     author = "KopterBuzz",
-    version = "0.1.0",
+    version = "0.1.1",
     about = "NOMGET: Nuclear Option Mod Manager CLI and Package Manager",
     long_about = "NOMGET is a terminal tool to query the NOMNOM Manifest, manage BepInEx 5, and resolve/install Nuclear Option mods."
 )]
