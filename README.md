@@ -2,6 +2,14 @@
 
 A powerful terminal application and library written in Rust for managing Nuclear Option mods, querying the [NOMNOM](https://github.com/KopterBuzz/NOMNOM) manifest, configuring BepInEx 5, and resolving complex mod dependency chains.
 
+## DISCLAIMER
+
+This Project is an EXPERIMENT that was entirely AI generated using a single prompt.
+
+I will not maintain it or address any issue requests. 
+
+You may copy it, fork it etc and do what you want with it.
+
 ## Features
 
 - **Query NOMNOM Manifest**:
