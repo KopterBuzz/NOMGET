@@ -6,6 +6,8 @@ A powerful terminal application and library written in Rust for managing Nuclear
 
 This Project is an EXPERIMENT that was entirely AI generated using a single prompt.
 
+As far as my testing showed, the listed features all work as intended.
+
 I am not planning to maintain it or address any issue requests or pull requests at the present time. 
 
 You may copy it, fork it etc and do what you want with it.
